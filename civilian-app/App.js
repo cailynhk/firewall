@@ -1,96 +1,65 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, Button, Image, Platform, ScrollView } from 'react-native';
-import { Camera } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
-import * as ImagePicker from 'expo-image-picker';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useState } from 'react';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function App() {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
-  const [capturedPhoto, setCapturedPhoto] = useState(null);
-  const [selectedMedia, setSelectedMedia] = useState(null);
-  const cameraRef = useRef(null);
+  const [facing, setFacing] = useState('back');
+  const [permission, requestPermission] = useCameraPermissions();
 
-  // Request permissions for camera and media library
-  React.useEffect(() => {
-    (async () => {
-      const { status: cameraStatus } = await Camera.requestPermissionsAsync();
-      const { status: mediaStatus } = await MediaLibrary.requestPermissionsAsync();
-      setHasPermission(cameraStatus === 'granted' && mediaStatus === 'granted');
-    })();
-  }, []);
-
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync();
-      setCapturedPhoto(photo.uri);
-    }
-  };
-
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setSelectedMedia(result.uri);
-    }
-  };
-
-  const uploadMedia = async () => {
-    // Implement your upload logic here
-    alert('Upload functionality not yet implemented.');
-  };
-
-  if (hasPermission === null) {
+  if (!permission) {
+    // Camera permissions are still loading.
     return <View />;
   }
-  if (hasPermission === false) {
-    return <Text>No access to camera or media library</Text>;
+
+  if (!permission.granted) {
+    // Camera permissions are not granted yet.
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
+      </View>
+    );
+  }
+
+  function toggleCameraFacing() {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Camera App</Text>
-      <View style={styles.cameraContainer}>
-        <Camera style={styles.camera} type={cameraType} ref={cameraRef} />
-      </View>
-      <Button title="Take Photo" onPress={takePicture} />
-      <Button title="Pick Image" onPress={pickImage} />
-      {capturedPhoto && <Image source={{ uri: capturedPhoto }} style={styles.image} />}
-      {selectedMedia && <Image source={{ uri: selectedMedia }} style={styles.image} />}
-      <Button title="Upload Media" onPress={uploadMedia} />
-    </ScrollView>
+    <View style={styles.container}>
+      <CameraView style={styles.camera} facing={facing}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+            <Text style={styles.text}>Flip Camera</Text>
+          </TouchableOpacity>
+        </View>
+      </CameraView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  cameraContainer: {
-    width: '100%',
-    height: 400,
-    marginBottom: 20,
   },
   camera: {
     flex: 1,
   },
-  image: {
-    width: 200,
-    height: 200,
-    marginVertical: 10,
+  buttonContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
+    margin: 64,
+  },
+  button: {
+    flex: 1,
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
-
