@@ -5,14 +5,24 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ViewButton from '@/components/ViewButton';
+import FireModelDisplay from '@/components/FireModelDisplay';
 
 export default function HomeScreen() {
 
   const [fireList, setFireList] = useState([{ location: 'Fire 1', severity: 'Fire 1 severity' },
   { location: 'Fire 2', severity: 'Fire 2 description' }]);
 
+  const [showFireModel, setShowFireModel] = useState(false);
+
+  const closeModel = () => {
+    setShowFireModel(false);
+}
+
   return (
     <View>
+      <FireModelDisplay isVisible={showFireModel} onClose={closeModel}>
+        {/* A list of emoji component will go here */}
+      </FireModelDisplay>
       <View style={styles.titleContainer}>
         <View style={{ flex: 0.5 }} />
         <Text style={styles.titleText}>Current Dispatches</Text>
@@ -20,11 +30,11 @@ export default function HomeScreen() {
       <View style={styles.firesListContainer}>
         {fireList.map((fire, index) => (
           <View key={index} style={styles.fireContainer}>
-            <View style={{...styles.fireTextContainer, flex:1.3}}>
+            <View style={{ ...styles.fireTextContainer, flex: 1.3 }}>
               <ThemedText type="defaultSemiBold">{fire.location}</ThemedText>
               <ThemedText>{fire.severity}</ThemedText>
             </View>
-            <ViewButton/>
+            <ViewButton setShowFire={setShowFireModel}/>
           </View>
         ))}
       </View>
