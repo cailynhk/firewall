@@ -1,69 +1,140 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, Button, Image, Platform, ScrollView } from 'react-native';
-import { Camera } from 'expo-camera';
+import { StyleSheet, Text, View, Button, SafeAreaView } from 'react-native';
+import { useState, useRef } from 'react';
+import { Video } from 'expo-av';
+import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
-import * as ImagePicker from 'expo-image-picker';
+
+import {initializeApp} from 'firebase/app';
+import {getAuth} from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {getAnalytics} from 'firebase/analytics';
+
+import {API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID} from '@env'
 
 export default function App() {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
-  const [capturedPhoto, setCapturedPhoto] = useState(null);
-  const [selectedMedia, setSelectedMedia] = useState(null);
-  const cameraRef = useRef(null);
+  let cameraRef = useRef();
+  const [hasCameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [hasMicrophonePermission, requestMicrophonePermission] = useMicrophonePermissions();
+  const [hasMediaLibraryPermission, requestMediaLibraryPermission] = MediaLibrary.usePermissions();
+  
+  const [isRecording, setIsRecording] = useState(false);
+  const [video, setVideo] = useState();
 
-  // Request permissions for camera and media library
-  React.useEffect(() => {
-    (async () => {
-      const { status: cameraStatus } = await Camera.requestPermissionsAsync();
-      const { status: mediaStatus } = await MediaLibrary.requestPermissionsAsync();
-      setHasPermission(cameraStatus === 'granted' && mediaStatus === 'granted');
-    })();
-  }, []);
+  const uploadFileFromURI = async (video) => {
+    if (!video?.uri) {
+      console.error("File DNE");
+      return;
+    }
 
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync();
-      setCapturedPhoto(photo.uri);
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: API_KEY,
+      authDomain: AUTH_DOMAIN,
+      projectId: PROJECT_ID,
+      storageBucket: STORAGE_BUCKET,
+      messagingSenderId: MESSAGING_SENDER_ID,
+      appId: APP_ID,
+      measurementId: MEASUREMENT_ID
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    try {
+      // Fetch video as a blob
+      const response = await fetch(video.uri);
+      const blob = await response.blob();
+
+      // Create a reference to the file in Firebase Storage
+      const videoRef = ref(storage, `video/${new Date().toISOString()}.mp4`);
+
+      // Upload the blob to Firebase Storage
+      await uploadBytes(videoRef, blob);
+
+      // Get the download URL
+      const url = await getDownloadURL(videoRef);
+      console.log("File available at", url);
+    } catch (error) {
+      console.error("Error uploading file:", error);
     }
   };
+  
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setSelectedMedia(result.uri);
-    }
-  };
-
-  const uploadMedia = async () => {
-    // Implement your upload logic here
-    alert('Upload functionality not yet implemented.');
-  };
-
-  if (hasPermission === null) {
+  if (!(hasCameraPermission && hasMicrophonePermission && hasMediaLibraryPermission)) {
     return <View />;
   }
-  if (hasPermission === false) {
-    return <Text>No access to camera or media library</Text>;
+
+  if (!hasCameraPermission.granted || !hasMicrophonePermission.granted || !hasMediaLibraryPermission) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
+        {!hasCameraPermission && <Button onPress={requestCameraPermission} title="Grant Camera Permission" />}
+        {!hasMicrophonePermission && <Button onPress={requestMicrophonePermission} title="Grant Microphone Permission" />}
+        {!hasMediaLibraryPermission && <Button onPress={requestMediaLibraryPermission} title="Grant Media Library Permission" />}
+      </View>
+    );
+  }
+
+  const recordVideo = async () => {
+    if (cameraRef.current) {
+      try {
+        setIsRecording(true);
+        const options = {
+          maxDuration: 10,
+        };
+        const recordedVideo = await cameraRef.current.recordAsync(options);
+        setVideo(recordedVideo);
+      } catch (error) {
+        console.error('Failed to record video:', error);
+      }
+    } else {
+      console.error('Camera reference is not set');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (cameraRef.current && isRecording) {
+      try {
+        await cameraRef.current.stopRecording();
+        setIsRecording(false);
+      } catch (error) {
+        console.error('Failed to stop video recording:', error);
+      }
+    } else {
+      console.error('Cannot stop recording; camera reference is not set or not recording');
+    }
+  };
+
+  if (video) {
+    let uploadVideo = async () => {
+      await uploadFileFromURI(video);
+      setVideo(null);  
+    };
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <Video
+          style={styles.video}
+          source={{ uri: video.uri }}
+          useNativeControls
+          resizeMode="contain"
+          isLooping
+        />
+        <Button title="Upload" onPress={uploadVideo} />
+        <Button title="Cancel" onPress={() => setVideo(null)} />
+      </SafeAreaView>
+    );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Camera App</Text>
-      <View style={styles.cameraContainer}>
-        <Camera style={styles.camera} type={cameraType} ref={cameraRef} />
+    <CameraView style={styles.container} ref={cameraRef} mode="video">
+      <View style={styles.buttonContainer}>
+        <Button title={isRecording ? "Stop Recording" : "Record Video"} onPress={isRecording ? stopRecording : recordVideo} />
       </View>
-      <Button title="Take Photo" onPress={takePicture} />
-      <Button title="Pick Image" onPress={pickImage} />
-      {capturedPhoto && <Image source={{ uri: capturedPhoto }} style={styles.image} />}
-      {selectedMedia && <Image source={{ uri: selectedMedia }} style={styles.image} />}
-      <Button title="Upload Media" onPress={uploadMedia} />
-    </ScrollView>
+    </CameraView>
   );
 }
 
@@ -72,25 +143,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+  buttonContainer: {
+    backgroundColor: "#fff",
+    alignSelf: "flex-end"
   },
-  cameraContainer: {
-    width: '100%',
-    height: 400,
-    marginBottom: 20,
-  },
-  camera: {
+  video: {
     flex: 1,
-  },
-  image: {
-    width: 200,
-    height: 200,
-    marginVertical: 10,
-  },
+    alignSelf: "stretch"
+  }
 });
-
