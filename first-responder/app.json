@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "first-responder-app",
-    "slug": "first-responder-app",
+    "name": "first-responder",
+    "slug": "first-responder",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

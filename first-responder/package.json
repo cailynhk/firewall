@@ -1,5 +1,5 @@
 {
-  "name": "first-responder-app",
+  "name": "first-responder",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
