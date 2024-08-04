@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View, Button, SafeAreaView, ActivityIndicator } from 'react-native';
-
 import { useState, useRef } from 'react';
 import { Video } from 'expo-av';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
@@ -24,6 +23,7 @@ export default function App() {
   const [loading, setLoading] = useState(false); // Loading state for geolocation
 
  
+  const uploadFileFromURI = async (video) => {
     if (!video?.uri) {
       console.error("File DNE");
       return;
@@ -60,6 +60,7 @@ export default function App() {
       // Get the download URL
       const url = await getDownloadURL(videoRef);
       return  url;
+    } catch (error) {
       console.error("Error uploading file:", error);
     }
     return null;
@@ -144,6 +145,7 @@ export default function App() {
       const lattitude = video.coords.lattitude
       const downloadUrl = url
       
+      setVideo(null);  
     };
 
     return (
