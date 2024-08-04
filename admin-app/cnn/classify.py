@@ -1,5 +1,5 @@
 import tensorflow as tf  # TensorFlow is required for Keras to work
-from PIL import Image, ImageOps  # Install pillow instead of PIL
+from PIL import Image, ImageOps # Install pillow
 import numpy as np
 
 def classify(image_path):
@@ -7,10 +7,10 @@ def classify(image_path):
     np.set_printoptions(suppress=True)
 
     # Load the model
-    model = tf.keras.models.load_model("admin/cnn/keras_model.h5", compile=False)
+    model = tf.keras.models.load_model("admin-app/cnn/keras_model.h5", compile=False)
 
     # Load the labels
-    class_names = open("admin/cnn/labels.txt", "r").readlines()
+    class_names = open("admin-app/cnn/labels.txt", "r").readlines()
 
     # Create the array of the right shape to feed into the keras model
     # The 'length' or number of images you can put into the array is
