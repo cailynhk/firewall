@@ -1,15 +1,16 @@
-import { StyleSheet, Text, View, Button, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, Button, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useState, useRef } from 'react';
 import { Video } from 'expo-av';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
+import * as Location from 'expo-location';
 
-import {initializeApp} from 'firebase/app';
-import {getAuth} from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import {getAnalytics} from 'firebase/analytics';
+import { getAnalytics } from 'firebase/analytics';
 
-import {API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID} from '@env'
+import { API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID, MONGO_CRE } from '@env';
 
 export default function App() {
   let cameraRef = useRef();
@@ -19,7 +20,9 @@ export default function App() {
   
   const [isRecording, setIsRecording] = useState(false);
   const [video, setVideo] = useState();
+  const [loading, setLoading] = useState(false); // Loading state for geolocation
 
+ 
   const uploadFileFromURI = async (video) => {
     if (!video?.uri) {
       console.error("File DNE");
@@ -56,10 +59,11 @@ export default function App() {
 
       // Get the download URL
       const url = await getDownloadURL(videoRef);
-      console.log("File available at", url);
+      return  url;
     } catch (error) {
       console.error("Error uploading file:", error);
     }
+    return null;
   };
   
 
@@ -86,7 +90,12 @@ export default function App() {
           maxDuration: 10,
         };
         const recordedVideo = await cameraRef.current.recordAsync(options);
-        setVideo(recordedVideo);
+        setLoading(true); // Start loading
+
+        const coords = await getCoordinates(); // Get coordinates
+        setLoading(false); // Stop loading
+
+        setVideo({ uri: recordedVideo.uri, coords }); // Store video URI and coordinates
       } catch (error) {
         console.error('Failed to record video:', error);
       }
@@ -108,9 +117,34 @@ export default function App() {
     }
   };
 
+// Function to get coordinates
+  const getCoordinates = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      console.error('Permission to access location was denied');
+      return null;
+    }
+    const { coords } = await Location.getCurrentPositionAsync({});
+    return coords; // Returns { latitude, longitude }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Fetching location...</Text>
+      </View>
+    );
+  }
+
   if (video) {
     let uploadVideo = async () => {
-      await uploadFileFromURI(video);
+      const url = await uploadFileFromURI(video);
+      console.log('Video coordinates:', video.coords); // Access coordinates
+      const longtidue = video.coords.longtitude
+      const lattitude = video.coords.lattitude
+      const downloadUrl = url
+      
       setVideo(null);  
     };
 
