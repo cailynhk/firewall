@@ -2,21 +2,18 @@ import { StyleSheet, Text, View, Button, SafeAreaView, ActivityIndicator } from 
 import { useState, useRef } from 'react';
 import { Video } from 'expo-av';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
 import * as Location from 'expo-location';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getAnalytics } from 'firebase/analytics';
 
-import { API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID, MONGO_CRE } from '@env';
+import { API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID, BACKEND_URL } from '@env';
 
 export default function App() {
-  let cameraRef = useRef();
+  let cameraRef = useRef(); 
   const [hasCameraPermission, requestCameraPermission] = useCameraPermissions();
   const [hasMicrophonePermission, requestMicrophonePermission] = useMicrophonePermissions();
-  const [hasMediaLibraryPermission, requestMediaLibraryPermission] = MediaLibrary.usePermissions();
   
   const [isRecording, setIsRecording] = useState(false);
   const [video, setVideo] = useState();
@@ -37,12 +34,10 @@ export default function App() {
       storageBucket: STORAGE_BUCKET,
       messagingSenderId: MESSAGING_SENDER_ID,
       appId: APP_ID,
-      measurementId: MEASUREMENT_ID
     };
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const auth = getAuth(app);
     const storage = getStorage(app);
 
@@ -65,19 +60,17 @@ export default function App() {
     }
     return null;
   };
-  
 
-  if (!(hasCameraPermission && hasMicrophonePermission && hasMediaLibraryPermission)) {
-    return <View />;
+  if (!hasCameraPermission || !hasMicrophonePermission) {
+    return <View />
   }
 
-  if (!hasCameraPermission.granted || !hasMicrophonePermission.granted || !hasMediaLibraryPermission) {
+  if (!hasCameraPermission.granted || !hasMicrophonePermission.granted) {
     return (
       <View style={styles.container}>
         <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
-        {!hasCameraPermission && <Button onPress={requestCameraPermission} title="Grant Camera Permission" />}
-        {!hasMicrophonePermission && <Button onPress={requestMicrophonePermission} title="Grant Microphone Permission" />}
-        {!hasMediaLibraryPermission && <Button onPress={requestMediaLibraryPermission} title="Grant Media Library Permission" />}
+        <Button onPress={requestCameraPermission} title="Grant Camera Permission" />
+        <Button onPress={requestMicrophonePermission} title="Grant Microphone Permission" />
       </View>
     );
   }
@@ -94,7 +87,8 @@ export default function App() {
 
         const coords = await getCoordinates(); // Get coordinates
         setLoading(false); // Stop loading
-
+        
+        console.log ('Recorded video:', recordedVideo.uri);
         setVideo({ uri: recordedVideo.uri, coords }); // Store video URI and coordinates
       } catch (error) {
         console.error('Failed to record video:', error);
@@ -138,45 +132,45 @@ export default function App() {
   }
 
   if (video) {
-    let uploadVideo = async () => {
+  
+    const uploadVideo = async () => {
+      print("===========================================================")
       const url = await uploadFileFromURI(video);
       console.log('Video coordinates:', video.coords); // Access coordinates
-      const longtidue = video.coords.longtitude
-      const lattitude = video.coords.lattitude
-      const downloadUrl = url
-      const uploadVideo = async () => {
-        const url = await uploadFileFromURI(video);
-        console.log('Video coordinates:', video.coords); // Access coordinates
-        const longitude = video.coords.longitude;
-        const latitude = video.coords.latitude;
-        const downloadUrl = url;
+      const longitude = video.coords.longitude;
+      const latitude = video.coords.latitude;
+      const downloadUrl = url;
 
-        // Send POST request to localhost:5000/add-fire
-        try {
-          const response = await fetch('http://localhost:5000/add-fire', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              latitude,
-              longitude,
-              download_url: downloadUrl,
-            }),
-          });
+      console.log("=========================================");
+      console.log("Longitude: ", longitude);
+      console.log("Latitude: ", latitude);
+      console.log("Download URL: ", downloadUrl);
+      console.log("=========================================");
 
-          if (response.ok) {
-            console.log('Fire added successfully');
-          } else {
-            console.error('Failed to add fire');
-          }
-        } catch (error) {
-          console.error('Error sending POST request:', error);
+      try {
+        const response = await fetch(BACKEND_URL+'/add-fire', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            latitude,
+            longitude,
+            download_url: downloadUrl,
+          }),
+        });
+
+        console.log(response)
+
+        if (response.ok) {
+          console.log('Fire added successfully');
+        } else {
+          console.error('Failed to add fire');
         }
-
-        setVideo(null);
-      };
-      setVideo(null);  
+      } catch (error) {
+        console.error('Error sending POST request:', error);
+      }
+      setVideo(null);
     };
 
     return (
