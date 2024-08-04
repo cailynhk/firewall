@@ -1,12 +1,34 @@
 import { styles } from "@/app/(tabs)";
 import { ThemedText } from "@/components/ThemedText";
-import { Modal, View, Pressable, StyleSheet, Text } from "react-native";
+import { Modal, View, Pressable, StyleSheet, Text, Button } from "react-native";
+import FireModelViewer from "./FireModelViewer";
+import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 
 export default function FireModelDisplay(props: { isVisible: Boolean, onClose: () => void }) {
+
+    const viewer = new GaussianSplats3D.Viewer({
+        'cameraUp': [0, -1, -0.6],
+        'initialCameraPosition': [-1, -4, 6],
+        'initialCameraLookAt': [0, 4, 0]
+    });
+    viewer.addSplatScene('../data/point_cloud.ply', {
+        'splatAlphaRemovalThreshold': 5,
+        'showLoadingUI': true,
+        'position': [0, 1, 0],
+        'rotation': [0, 0, 0, 1],
+        'scale': [1.5, 1.5, 1.5]
+    })
+    .then(() => {
+        viewer.start();
+    });
+        
     return (
         <Modal visible={props.isVisible}>
             <View>
                 <Text style={styles.titleContainer}>RRAAAHHHH FIRREEEE!!</Text>
+                
+                <GaussianSplats3D.ViewerComponent viewer={viewer} />
+                
                 <View style={buttonStyles.buttonContainer}>
                     <Pressable style={buttonStyles.button} onPress={props.onClose}>
                         <ThemedText type="default">Close</ThemedText>
@@ -15,7 +37,6 @@ export default function FireModelDisplay(props: { isVisible: Boolean, onClose: (
             </View>
         </Modal>
     );
-
 }
 
 const buttonStyles = StyleSheet.create({
