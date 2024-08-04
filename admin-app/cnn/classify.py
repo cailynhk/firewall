@@ -2,7 +2,7 @@ import tensorflow as tf  # TensorFlow is required for Keras to work
 from PIL import Image, ImageOps # Install pillow
 import numpy as np
 
-def classify(image_path):
+def classify(image_path: str) -> str:
     # Disable scientific notation for clarity
     np.set_printoptions(suppress=True)
 
