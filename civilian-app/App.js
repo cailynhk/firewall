@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View, Button, SafeAreaView, ActivityIndicator } from 'react-native';
-
 import { useState, useRef } from 'react';
 import { Video } from 'expo-av';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
@@ -24,6 +23,7 @@ export default function App() {
   const [loading, setLoading] = useState(false); // Loading state for geolocation
 
  
+  const uploadFileFromURI = async (video) => {
     if (!video?.uri) {
       console.error("File DNE");
       return;
@@ -60,6 +60,7 @@ export default function App() {
       // Get the download URL
       const url = await getDownloadURL(videoRef);
       return  url;
+    } catch (error) {
       console.error("Error uploading file:", error);
     }
     return null;
@@ -143,7 +144,39 @@ export default function App() {
       const longtidue = video.coords.longtitude
       const lattitude = video.coords.lattitude
       const downloadUrl = url
-      
+      const uploadVideo = async () => {
+        const url = await uploadFileFromURI(video);
+        console.log('Video coordinates:', video.coords); // Access coordinates
+        const longitude = video.coords.longitude;
+        const latitude = video.coords.latitude;
+        const downloadUrl = url;
+
+        // Send POST request to localhost:5000/add-fire
+        try {
+          const response = await fetch('http://localhost:5000/add-fire', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              latitude,
+              longitude,
+              download_url: downloadUrl,
+            }),
+          });
+
+          if (response.ok) {
+            console.log('Fire added successfully');
+          } else {
+            console.error('Failed to add fire');
+          }
+        } catch (error) {
+          console.error('Error sending POST request:', error);
+        }
+
+        setVideo(null);
+      };
+      setVideo(null);  
     };
 
     return (
