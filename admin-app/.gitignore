@@ -1,7 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.env
 
-# data
-/data
+#data
+/public/*
+
+/app/api/run_script/script.sh
 
 # dependencies
 /node_modules
