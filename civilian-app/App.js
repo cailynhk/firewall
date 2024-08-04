@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button, SafeAreaView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, Button, SafeAreaView, ActivityIndicator, Pressable } from 'react-native';
 import { useState, useRef } from 'react';
 import { Video } from 'expo-av';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
@@ -124,9 +124,9 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Fetching location...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#db4a2b" />
+        <Text style={styles.loadingText}>Fetching location...</Text>
       </View>
     );
   }
@@ -190,8 +190,16 @@ export default function App() {
 
   return (
     <CameraView style={styles.container} ref={cameraRef} mode="video">
+      <View style={{...styles.container, flex: 0.9}}/>
       <View style={styles.buttonContainer}>
-        <Button title={isRecording ? "Stop Recording" : "Record Video"} onPress={isRecording ? stopRecording : recordVideo} />
+        <Pressable style={styles.button} onPress={isRecording ? stopRecording : recordVideo}>
+        <View style={isRecording? {...styles.buttonContainer, backgroundColor: 'red'} : styles.buttonContainer}/>
+        </Pressable>
+        {/* <Button style={styles.recordText} title="oooooooooooooo" onPress={isRecording ? stopRecording : recordVideo} /> */}
+      </View>
+      <View style={{...styles.container, flex: 0.02}}/>
+      <View style={{...styles.recordTextcontainer, paddingTop: 20}}>
+      <Text style={{...styles.recordText, paddingBottom:20}}>{isRecording? "Stop recording" : "Press to record the fire"}</Text>
       </View>
     </CameraView>
   );
@@ -202,13 +210,41 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'column',
   },
   buttonContainer: {
     backgroundColor: "#fff",
-    alignSelf: "flex-end"
+    opacity: 1,
+    width: 70,
+    height: 70,
+    borderRadius: '50%',
+    border: 'none',
+    alignSelf: "center"
   },
   video: {
     flex: 1,
     alignSelf: "stretch"
-  }
+  },
+  recordTextcontainer: {
+    height: 70,
+    width: '100%',
+    backgroundColor: 'black',
+    opacity: 0.7,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordText: {
+    fontSize: 20,
+    color: 'white',
+  },
+  loadingText: {
+    marginTop: 10, // Add a margin to create space
+    fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e4e2dd',
+  },
 });
