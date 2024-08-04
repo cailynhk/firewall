@@ -5,11 +5,11 @@ import os
 
 load_dotenv()
 app = Flask(__name__)
-# MongoDB connection URI
 mongo_uri = os.getenv('MONGO_URI')
+print(mongo_uri)
 client = MongoClient(mongo_uri)
-db = client['users']  # Database name
-collection = db['admin']  # Collection name
+db = client['users']  
+collection = db['admin'] 
 
 @app.route('/add-fire', methods=['POST'])
 def add_admin():
