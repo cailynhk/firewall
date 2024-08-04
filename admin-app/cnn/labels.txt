@@ -1,0 +1,3 @@
+0 Low Fire
+1 High Fire
+2 No Fire
