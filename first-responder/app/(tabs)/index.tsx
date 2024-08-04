@@ -10,7 +10,7 @@ import FireModelDisplay from '@/components/FireModelDisplay';
 export default function HomeScreen() {
 
   const [fireList, setFireList] = useState([{ location: 'Fire 1', severity: 'Fire 1 severity' },
-  { location: 'Fire 2', severity: 'Fire 2 description' }]);
+  { location: 'Fire 2', severity: 'Fire 2 severity' }]);
 
   const [showFireModel, setShowFireModel] = useState(false);
 
@@ -19,7 +19,7 @@ export default function HomeScreen() {
 }
 
   return (
-    <View>
+    <View style={styles.container}>
       <FireModelDisplay isVisible={showFireModel} onClose={closeModel}>
         {/* A list of emoji component will go here */}
       </FireModelDisplay>
@@ -31,8 +31,8 @@ export default function HomeScreen() {
         {fireList.map((fire, index) => (
           <View key={index} style={styles.fireContainer}>
             <View style={{ ...styles.fireTextContainer, flex: 1.3 }}>
-              <ThemedText type="defaultSemiBold">{fire.location}</ThemedText>
-              <ThemedText>{fire.severity}</ThemedText>
+              <Text style={{...styles.fireText, fontWeight: 'bold'}}>{fire.location}</Text>
+              <Text style={styles.fireText}>{fire.severity}</Text>
             </View>
             <ViewButton setShowFire={setShowFireModel}/>
           </View>
@@ -45,6 +45,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#e4e2dd',
+  },
   titleContainer: {
     padding: 16,
     marginTop: Platform.OS === 'ios' ? 80 : 0,
@@ -70,8 +74,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   fireTextContainer: {
+    marginTop: 8,
     flexDirection: 'column',
     gap: 8,
+  },
+  fireText: {
+    fontSize: 18,
+    fontFamily: 'Montserrat',
   },
 });
 
