@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Entries</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Entries</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Download URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% entries.forEach(entry => { %>
+                <tr>
+                    <td><%= entry.latitude %></td>
+                    <td><%= entry.longitude %></td>
+                    <td><a href="<%= entry.download_url %>" target="_blank">View File</a></td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('newEntry', (data) => {
+            const tableBody = document.querySelector('table tbody');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td>${data.latitude}</td>
+                <td>${data.longitude}</td>
+                <td><a href="${data.download_url}" target="_blank">View File</a></td>
+            `;
+            
+            tableBody.appendChild(newRow);
+        });
+    </script>
+</body>
+</html>
